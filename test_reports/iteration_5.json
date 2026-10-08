@@ -1,0 +1,26 @@
+{
+  "summary": "Verified diagnostic + name-based matching changes to the DocGalaxy autofill bookmarklet end-to-end against the local mock harness. Admin login (ashokashok7751@gmail.com / DocGalaxy@2026) succeeded, 'View & Bookmarklet' dialog opens, 'Copy Code' button is present. Decoded the javascript: href for order 96a6aa44-988d-4e50-bb48-bb53850e4a7f and confirmed: (a) NO 'alert(' substring, (b) autofill endpoint '/api/orders/<id>/autofill' is embedded, (c) order field values are NOT hardcoded (customer names/doc text not present in JS). Executed decoded JS via page.evaluate on https://estamping-guj.preview.emergentagent.com/shcil-mock.html and captured console + registered dialog listener. The bookmarklet filled 6 of 7 fields (purBy, desc, fp, sp, duty, ddlPaidBy=Second Party); consideration remained empty only because this particular order's consideration_price is null in backend data (not a bookmarklet bug - fields with no value are skipped by design). page.on('dialog') NEVER fired. Console diagnostic output is exactly as specified: a header line 'DocGalaxy Autofill — 7 fillable field(s) detected on this page:' followed by console.table of {tag,type,name,id,label} for every detected field, then a summary line 'DocGalaxy Autofill: 6 field(s) filled.' with the matched values array. Name-based (ASP.NET substring) matching works: fields named ctl00$cph$txtPurBy / txtDesc / txtFp / txtSp / txtDuty / ddlPaidBy were correctly matched via the m.n substring hints ('purby','desc','fp','sp','duty','paidby') combined with label-synonym (sibling <td>) matching.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_bookmarklet_autofill.py"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "bookmarklet.js console diagnostic is well-structured: uses %c styling, console.table for field diagnostics, and a green/red summary line. Good debuggability.",
+    "n (name substring hints) in FIELD_SYNONYMS correctly handles ASP.NET cryptic names; combined label+name matching with longest-match wins is a sensible strategy.",
+    "fetch uses {cache:'no-store'} - guarantees live data (verified in previous iteration). No regression on dynamic fetch."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a (frontend-only task)", "frontend": "100% (5/5 required checks)"},
+  "test_credentials": "Admin: ashokashok7751@gmail.com / DocGalaxy@2026",
+  "seed_data_creation": "Used existing order 96a6aa44-988d-4e50-bb48-bb53850e4a7f (customer 'galaxy', doc 'Agreement (not otherwise provided for) (Art. 5(h))', first party 'ASHOKBHAI SHAMJIBHA SOLANKI', second party 'PATEL NAROTAMBHAI NARANABHAI', duty 1000, paid by Second Party, purchased_by 'P D SOLANKI', description 'RENT AGREEMENT').",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Verified console diagnostic format. Captured console lines (exact):\n  1) '%cDocGalaxy Autofill — 7 fillable field(s) detected on this page:' + styles\n  2) console.table([{tag,type,name,id,label} x7])\n  3) '%cDocGalaxy Autofill: 6 field(s) filled.' + styles + matched array\nNo dialogs fired. 6/7 fields filled (consideration empty because order.data.consideration_price is null). To re-test with all 7 filled, create an order with every value populated.",
+  "rca of the issue": "N/A - all required behaviour verified. If user still reports '0 fields filled' on real shcilestamp.com, likely cause is CORS blocking the /api/orders/<id>/autofill fetch from shcilestamp.com origin (real-site WAF). Next iteration should check backend CORS allow-origin for the autofill endpoint OR instruct user to open browser DevTools Network tab to see if the fetch was blocked, then paste the newly-added console.table output back for mapping tuning."
+}
