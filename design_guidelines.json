@@ -1,0 +1,98 @@
+{
+  "theme": "Light theme preferred for legal/government forms to maintain high contrast, authority, and clarity. Optional dark mode for Admin Dashboard.",
+  "typography": {
+    "headings": {
+      "family": "Outfit, sans-serif",
+      "strategy": "Swiss Brutalist - sharp, clean, tightly tracked.",
+      "weights": ["400", "600", "700"],
+      "tracking": "tracking-tight"
+    },
+    "body": {
+      "family": "IBM Plex Sans, sans-serif",
+      "strategy": "High legibility, tabular numerals for currency amounts.",
+      "weights": ["400", "500"]
+    }
+  },
+  "colors": {
+    "archetype": "Swiss & High-Contrast (Authority, Clarity, Truth)",
+    "primary": "#0F172A",
+    "secondary": "#2563EB",
+    "accent": "#F59E0B",
+    "success": "#10B981",
+    "background": "#FAFAFA",
+    "surface": "#FFFFFF",
+    "border": "#E2E8F0",
+    "text": {
+      "primary": "#0F172A",
+      "secondary": "#475569"
+    }
+  },
+  "visual_enhancers": {
+    "shadows": "Crisp edges, semi-transparent borders + subtle ambient shadows (shadow-sm, shadow-md).",
+    "borders": "1px solid border-slate-200 for forms and cards. No soft UI/neumorphism.",
+    "textures": "Subtle grain or noise on hero background for a premium, grounded feel.",
+    "surfaces": "Glassmorphism for sticky headers (backdrop-blur-xl bg-white/80). Flat solid colors for form containers to prevent refraction."
+  },
+  "grids_and_layouts": {
+    "homepage": "Bento grid for features and Q&A. Asymmetrical layout for hero.",
+    "form": "2-column layout on desktop: Left column for form sections (First Party, Second Party, Stamp Details), Right column for sticky 'Auto-save Status' and 'Document Summary'.",
+    "dashboard": "High density grid. Sidebar navigation, top bar for global actions, main content area with data-heavy tables.",
+    "spacing": "Generous spacing (p-8 to p-16) for marketing sections. Dense spacing (p-4, gap-4) for admin tables and multi-step forms."
+  },
+  "components": {
+    "navigation": "Sticky header with clear DocGalaxy brand. Logo left, navigation links center, Login/CTA right.",
+    "forms": "Use Shadcn Form, Input, Select. Implement a Combobox for 'Description of Document' (searchable Gujarat stamp duty articles). Labels must be legible, fields must support optional states clearly.",
+    "buttons": "Slightly rounded (rounded-md) for trust. High contrast hover states (e.g., hover:bg-slate-800 hover:text-white).",
+    "tables": "Shadcn Table with tabular-nums for currency. Sticky header. Badges for Status (Draft, Submitted, Paid, Unpaid).",
+    "cards": "Flat background, 1px subtle border, hover:-translate-y-1 hover:shadow-lg for interactivity."
+  },
+  "motion": {
+    "interactions": "Hover states on all interactive elements. Explicit focus rings (focus:ring-2 focus:ring-blue-500) for accessibility.",
+    "page_transitions": "Framer motion staggered fade-in for form sections and dashboard rows."
+  },
+  "accessibility": {
+    "contrast": "APCA standard compliant. Minimum 4.5:1 for normal text.",
+    "aria": "All form fields must have aria-labels. Decorative icons must have aria-hidden='true'.",
+    "testing": "All interactive elements MUST include data-testid attribute (e.g., data-testid='login-submit-button', data-testid='estamping-form')."
+  },
+  "media": {
+    "images": [
+      {
+        "url": "https://images.unsplash.com/photo-1767869172194-867aa6c0e14b?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1ODB8MHwxfHNlYXJjaHwxfHxsZWdhbCUyMGRvY3VtZW50JTIwc3RhbXAlMjBwcm9mZXNzaW9uYWx8ZW58MHx8fHwxNzkxNDQ0NjE4fDA&ixlib=rb-4.1.0&q=85",
+        "description": "Collection of stamps, to be used in Hero section or About section."
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1498262257252-c282316270bc?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NTYxODd8MHwxfHNlYXJjaHwyfHxhYnN0cmFjdCUyMGdlb21ldHJpYyUyMGFyY2hpdGVjdHVyZSUyMGNsZWFufGVufDB8fHx8MTc5MTQ0NDYxOXww&ixlib=rb-4.1.0&q=85",
+        "description": "Clean architectural lines, good for Auth page background or hero texture."
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1649433658557-54cf58577c68?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NTYxODF8MHwxfHNlYXJjaHwyfHxpbmRpYW4lMjBwcm9mZXNzaW9uYWwlMjBwb3J0cmFpdHxlbnwwfHx8fDE3OTE0NDQ2MTh8MA&ixlib=rb-4.1.0&q=85",
+        "description": "Indian professional portrait for Testimonial 1."
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1598411435746-47bfecc3ea98?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NTYxODF8MHwxfHNlYXJjaHwxfHxpbmRpYW4lMjBwcm9mZXNzaW9uYWwlMjBwb3J0cmFpdHxlbnwwfHx8fDE3OTE0NDQ2MTh8MA&ixlib=rb-4.1.0&q=85",
+        "description": "Indian professional portrait for Testimonial 2."
+      }
+    ]
+  },
+  "instructions_to_main_agent": [
+    "Build a robust React application using Tailwind CSS and Shadcn UI.",
+    "Implement the customer auth (Mobile + Name + OTP) and admin auth (Email + Password). Mock backend/OTP flow if necessary but ensure full UI experience.",
+    "For the E-Stamping application form, use a multi-section layout. Implement a Combobox/Searchable dropdown for 'Description of Document' (Gujarat stamp duty articles).",
+    "All fields in the E-Stamping form must be optional. Implement auto-save as draft feature visually.",
+    "After form submission, render it in a read-only state.",
+    "Admin dashboard must include an orders table with Paid/Unpaid toggles, Review moderation, and a 'Generate Autofill Bookmarklet' button.",
+    "Ensure SEO tags (H1/H2, schema markup, OG tags) are structured properly on the homepage targeting 'estamping' keyword.",
+    "Use lucide-react for standard icons.",
+    "Do NOT use 'transition: all' in CSS. Specify transitions explicitly (e.g., transition-colors, transition-transform)."
+  ],
+  "universal_guidelines_for_main_agent": [
+    "Create depth through layered design elements with z-index hierarchy.",
+    "Never use generic centered layouts, simplistic gradients, or uniform styling.",
+    "Do not center align the App container (no .App { text-align: center; }).",
+    "Always use modern button styles with proper padding and hover states.",
+    "Never use AI assistant emoji characters for icons.",
+    "Every interaction needs micro-animations (hover, focus, active).",
+    "Use Sonner for toasts."
+  ]
+}
