@@ -17,7 +17,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { toast } from "sonner";
 
-const HERO_IMG = "https://images.unsplash.com/photo-1767869172194-867aa6c0e14b?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1ODB8MHwxfHNlYXJjaHwxfHxsZWdhbCUyMGRvY3VtZW50JTIwc3RhbXAlMjBwcm9mZXNzaW9uYWx8ZW58MHx8fHwxNzkxNDQ0NjE4fDA&ixlib=rb-4.1.0&q=85";
+const HERO_IMG = "/estamp-hero.jpg";
 
 const services = [
   { icon: FileCheck2, title: "Sale Deed & Banakhat", desc: "Online estamping for sale deeds and agreements to sell with accurate Gujarat stamp duty." },
@@ -196,8 +196,8 @@ export default function Home() {
             className="relative"
           >
             <div className="absolute -right-6 -top-6 h-40 w-40 rounded-full bg-amber-400/20 blur-2xl" />
-            <div className="relative overflow-hidden rounded-xl border border-slate-200 shadow-xl">
-              <img src={HERO_IMG} alt="Estamping documents and official stamps in Gujarat" className="h-[420px] w-full object-cover" />
+            <div className="relative overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl">
+              <img src={HERO_IMG} alt="India non-judicial e-Stamp certificate issued for estamping in Gujarat" className="h-[420px] w-full bg-white object-cover object-top" />
             </div>
             <div className="absolute -bottom-6 left-6 flex items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3 shadow-lg">
               <CheckCircle2 className="h-8 w-8 text-emerald-500" />
