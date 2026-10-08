@@ -79,7 +79,37 @@ def test_articles():
     r = requests.get(f"{API}/articles")
     assert r.status_code == 200
     data = r.json()
-    assert isinstance(data, list) and len(data) > 0
+    assert isinstance(data, list)
+    assert len(data) == 68, f"expected 68 Gujarat stamp articles, got {len(data)}"
+    # spot-check well-known articles mentioned in review
+    descriptions = [a["description"].lower() for a in data]
+    articles_nums = [a["article"].strip() for a in data]
+    assert any("affidavit" in d for d in descriptions)
+    assert any("divorce" in d for d in descriptions)
+    assert any("indemnity" in d for d in descriptions)
+    assert "4" in articles_nums and "25" in articles_nums and "29" in articles_nums
+
+
+def test_order_persists_new_document_fields(customer_token):
+    token, _, _ = customer_token
+    h = {"Authorization": f"Bearer {token}"}
+    oid = requests.post(f"{API}/orders", json={}, headers=h).json()["id"]
+    payload = {
+        "purchased_by": "TEST_First Party",
+        "description_of_document": "TEST_Sample lease deed description",
+        "article": "Affidavit (Art. 4)",
+        "consideration_price": "5000000",
+    }
+    r = requests.put(f"{API}/orders/{oid}", json=payload, headers=h)
+    assert r.status_code == 200
+    d = r.json()["data"]
+    for k, v in payload.items():
+        assert d[k] == v, f"{k} not persisted"
+    # reload to confirm persistence
+    r2 = requests.get(f"{API}/orders/{oid}", headers=h)
+    d2 = r2.json()["data"]
+    for k, v in payload.items():
+        assert d2[k] == v
 
 
 def test_faqs():

@@ -1,0 +1,20 @@
+{
+  "summary": "Regression after Logo + Document Details restructure. Backend: 15/15 pytest cases pass including new test_articles (asserts 68 Gujarat articles with Affidavit/Divorce/Indemnity Art 4/25/29) and test_order_persists_new_document_fields (purchased_by, description_of_document, article='Affidavit (Art. 4)', consideration_price persist through PUT + GET). Frontend: Galaxy Stamp logo (image /galaxy-stamp-logo.jpg + 'Galaxy Stamp' + 'By DocGalaxy') renders on Home (2 instances = navbar+footer), CustomerLogin (1), AdminLogin (1), Dashboard (2), EStampingForm (2), AdminDashboard (1). Document Details fields verified: field-purchased_by is INPUT, field-description_of_document is TEXTAREA, field-consideration_price strips letters ('abc12.34xyz' -> '12.34'), article-combobox-trigger opens search; typing 'affidav' filters to 2 options and selecting sets trigger text to 'Affidavit (Art. 4)'; typing 'bond' filters to 12 options. Auto-save shows 'Draft saved' and after reload all 4 new values persist. Submit confirm locks the form (readonly-badge visible, purchased_by disabled=true). Admin view-order dialog shows Purchased By / Description of Document / Article / Consideration Price labels and SHCIL Autofill + Copy Code bookmarklet.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": ["/app/backend/tests/backend_test.py", "/app/test_reports/pytest/pytest_results.xml"],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Two seeded Gujarat articles share duplicate 'article' numbers via trailing-space hack ('15 ', '42(b) ', '50 ', '53 ') to differentiate Up-To / Above Rs. 10 Crore variants. Front-end trims whitespace so both tiers display as 'Art. 15', 'Art. 42(b)' etc with identical labels after trim -- consider adding an explicit tier/range field or unique code so users can distinguish them.",
+    "Logo component renders Link with data-testid='brand-logo' only when 'to' prop is non-null; on Home/Dashboard/EStampingForm the brand-logo testid is absent (logo is rendered as a non-link inside Navbar). Not a bug but worth standardising the testid so automation can target the logo consistently on every page.",
+    "server.py still 379 lines with inline models/routes -- fine for MVP, will benefit from modularisation (routers/auth, routers/orders, routers/admin) as scope grows."
+  ],
+  "updated_files": ["/app/backend/tests/backend_test.py"],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "test_credentials": "Admin ashokashok7751@gmail.com / DocGalaxy@2026 ; Customer any 10-digit mobile + any name + OTP 123456",
+  "seed_data_creation": "Tests create ephemeral TEST_ prefixed customer orders (random mobiles). No cleanup needed, isolated by random identifiers.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Backend suite: /app/backend/tests/backend_test.py (15 tests, parallel-safe). Key new data-testids on EStampingForm: field-purchased_by (input), field-description_of_document (textarea), field-consideration_price (numeric), article-combobox-trigger, article-combobox-search, article-option-<i>. Article values stored as human label like 'Affidavit (Art. 4)'. Logo component: /app/frontend/src/components/Logo.js, image at /app/frontend/public/galaxy-stamp-logo.jpg.",
+  "rca of the issue": "No issues found."
+}
