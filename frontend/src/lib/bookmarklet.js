@@ -1,40 +1,45 @@
 // Generates a robust autofill bookmarklet for the shcilestamp.com e-stamping
-// "Create Submission" form. The SHCIL form uses a table layout
-// (<td>Label</td><td><input></td>) with no <label> elements and cryptic
-// server-generated field names, so we resolve each field's label from its
-// preceding table cell / sibling text and match against known SHCIL labels.
+// "Create Submission" form.
+//
+// Key properties:
+// - NO alerts/popups: fills fields silently.
+// - NO stale data: the order values are NOT hardcoded. At click time the
+//   bookmarklet fetches the LATEST order data live from the backend using the
+//   order id, so it always reflects current customer details.
+//
+// The SHCIL form uses a table layout (<td>Label</td><td><input></td>) with no
+// <label> elements and cryptic server-generated field names, so we resolve each
+// field's label from its preceding table cell / sibling text and match against
+// known SHCIL labels.
+
+import { API } from "@/lib/api";
+
+// field key on order.data -> list of label synonyms seen on SHCIL / generic forms
+const FIELD_SYNONYMS = [
+  { f: "purchased_by", k: ["stamp duty purchased by", "purchased by", "purchaser", "purchased"] },
+  { f: "description_of_document", k: ["description of document", "document description", "description"] },
+  { f: "article", k: ["article"] },
+  { f: "consideration_price", k: ["consideration of property", "consideration price", "consideration value", "consideration amount", "consideration", "property value", "market value"] },
+  { f: "first_party_name", k: ["name and address of the first party", "name address of the first party", "details of first party", "first party name", "first party"] },
+  { f: "second_party_name", k: ["name and address of the second party", "name address of the second party", "details of second party", "second party name", "second party"] },
+  { f: "stamp_duty_amount", k: ["stamp duty amount", "stamp duty", "duty amount"] },
+  { f: "stamp_duty_paid_by", k: ["stamp duty paid by", "duty paid by", "paid by"] },
+  { f: "first_party_address1", k: ["first party address", "address line 1", "address"] },
+  { f: "first_party_pin", k: ["pin code", "pincode", "pin"] },
+  { f: "first_party_pan", k: ["pan"] },
+  { f: "first_party_mobile", k: ["mobile", "phone", "contact number"] },
+  { f: "first_party_email", k: ["email", "e-mail"] },
+  { f: "gender", k: ["gender"] },
+  { f: "mode_of_payment", k: ["mode of payment", "payment mode"] },
+  { f: "proof_of_identity", k: ["proof of identity", "identity proof"] },
+  { f: "proof_of_residence", k: ["proof of residence", "residence proof", "address proof"] },
+];
 
 export function buildBookmarklet(order) {
-  const d = order.data || {};
+  const url = `${API}/orders/${order.id}/autofill`;
+  const syn = JSON.stringify(FIELD_SYNONYMS);
 
-  // Each entry: keys (synonyms seen on SHCIL / generic forms) -> value.
-  // Longer keys win when multiple match, so specific labels take priority.
-  const raw = [
-    { k: ["stamp duty purchased by", "purchased by", "purchaser", "purchased"], v: d.purchased_by },
-    { k: ["description of document", "document description", "description"], v: d.description_of_document },
-    { k: ["article"], v: d.article },
-    { k: ["consideration of property", "consideration price", "consideration value", "consideration amount", "consideration", "property value", "market value"], v: d.consideration_price },
-    { k: ["name and address of the first party", "name address of the first party", "details of first party", "first party name", "first party"], v: d.first_party_name },
-    { k: ["name and address of the second party", "name address of the second party", "details of second party", "second party name", "second party"], v: d.second_party_name },
-    { k: ["stamp duty amount", "stamp duty", "duty amount"], v: d.stamp_duty_amount },
-    { k: ["stamp duty paid by", "duty paid by", "paid by"], v: d.stamp_duty_paid_by },
-    { k: ["first party address", "address line 1", "address"], v: d.first_party_address1 },
-    { k: ["pin code", "pincode", "pin"], v: d.first_party_pin },
-    { k: ["pan"], v: d.first_party_pan },
-    { k: ["mobile", "phone", "contact number"], v: d.first_party_mobile },
-    { k: ["email", "e-mail"], v: d.first_party_email },
-    { k: ["gender"], v: d.gender },
-    { k: ["mode of payment", "payment mode"], v: d.mode_of_payment },
-    { k: ["proof of identity", "identity proof"], v: d.proof_of_identity },
-    { k: ["proof of residence", "residence proof", "address proof"], v: d.proof_of_residence },
-  ];
-
-  const mapping = raw.filter((m) => m.v != null && String(m.v).trim() !== "")
-    .map((m) => ({ k: m.k, v: String(m.v) }));
-
-  const payload = JSON.stringify(mapping);
-
-  const code = `(function(){try{var M=${payload};
+  const code = `(function(){try{var URL=${JSON.stringify(url)};var SYN=${syn};
 function norm(s){return (s||'').toString().toLowerCase().replace(/[^a-z0-9 ]/g,' ').replace(/\\s+/g,' ').trim();}
 function setVal(el,val){
  try{
@@ -54,16 +59,21 @@ function ctxOf(el){
  var fg=el.closest&&el.closest('div');if(fg){var dl=fg.querySelector('label');if(dl)p.push(dl.innerText);}
  return norm(p.join(' '));
 }
-var filled=0;
-var els=document.querySelectorAll('input:not([type=hidden]):not([type=submit]):not([type=button]):not([type=reset]):not([type=checkbox]):not([type=radio]):not([type=password]),textarea,select');
-els.forEach(function(el){
- var ctx=ctxOf(el);if(!ctx)return;
- var best=null,bestLen=0;
- M.forEach(function(m){m.k.forEach(function(key){var nk=norm(key);if(nk&&ctx.indexOf(nk)>-1&&nk.length>bestLen){best=m;bestLen=nk.length;}});});
- if(best){if(setVal(el,best.v)){filled++;try{el.style.outline='2px solid #22c55e';}catch(e){}}}
-});
-alert('DocGalaxy Autofill: '+filled+' field(s) filled. Please review before submitting.');
-}catch(e){alert('DocGalaxy Autofill error: '+e.message);}})();`;
+function fill(d){
+ var M=[];SYN.forEach(function(r){var v=d[r.f];if(v!=null&&String(v).trim()!=='')M.push({k:r.k,v:String(v)});});
+ var filled=0;
+ var els=document.querySelectorAll('input:not([type=hidden]):not([type=submit]):not([type=button]):not([type=reset]):not([type=checkbox]):not([type=radio]):not([type=password]),textarea,select');
+ els.forEach(function(el){
+  var ctx=ctxOf(el);if(!ctx)return;
+  var best=null,bestLen=0;
+  M.forEach(function(m){m.k.forEach(function(key){var nk=norm(key);if(nk&&ctx.indexOf(nk)>-1&&nk.length>bestLen){best=m;bestLen=nk.length;}});});
+  if(best){if(setVal(el,best.v)){filled++;try{el.style.outline='2px solid #22c55e';}catch(e){}}}
+ });
+ try{console.log('DocGalaxy Autofill: '+filled+' field(s) filled.');}catch(e){}
+ return filled;
+}
+return fetch(URL,{cache:'no-store'}).then(function(r){return r.json();}).then(function(d){return fill(d);}).catch(function(e){try{console.error('DocGalaxy Autofill error:',e);}catch(x){}return 0;});
+}catch(e){try{console.error('DocGalaxy Autofill error:',e);}catch(x){}}})();`;
 
   return "javascript:" + encodeURIComponent(code);
 }

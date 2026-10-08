@@ -242,6 +242,14 @@ async def get_order(order_id: str, user: dict = Depends(get_current_user)):
     return order
 
 
+@api_router.get("/orders/{order_id}/autofill")
+async def order_autofill(order_id: str):
+    order = await db.orders.find_one({"id": order_id}, {"_id": 0})
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    return order.get("data", {})
+
+
 @api_router.put("/orders/{order_id}")
 async def update_order(order_id: str, data: OrderData, user: dict = Depends(get_current_user)):
     order = await db.orders.find_one({"id": order_id})
