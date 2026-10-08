@@ -94,7 +94,11 @@ function OrderDetailDialog({ order, children }) {
               <p className="text-sm font-semibold text-amber-900">Autofill Bookmarklet for shcilestamp.com</p>
               <p className="mt-1 text-xs text-amber-700">
                 Drag the button to your browser's bookmarks bar, open the shcilestamp.com e-stamping form,
-                then click the saved bookmark to auto-fill the fields.
+                then click the saved bookmark to auto-fill the fields. It fetches the latest order data live.
+              </p>
+              <p className="mt-1 text-xs text-amber-700">
+                <strong>Debug:</strong> after clicking, press <strong>F12 → Console</strong> to see the list of field
+                names detected on the page and how many were filled. If you re-generate, drag the button again to refresh the bookmark.
               </p>
             </div>
           </div>
