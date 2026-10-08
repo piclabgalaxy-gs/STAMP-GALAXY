@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mock SHCIL e-Stamping Create Submission (test harness)</title>
+  <style>
+    body{font-family:Arial, sans-serif;background:#f4f6f9;padding:24px;color:#222}
+    h2{color:#2a4b8d}
+    table{border-collapse:collapse;background:#fff;width:720px;box-shadow:0 1px 4px rgba(0,0,0,.1)}
+    td{border:1px solid #d9dee8;padding:10px 12px;vertical-align:middle}
+    td.lbl{background:#eef2f8;width:260px;font-weight:bold}
+    input[type=text],input[type=number],textarea,select{width:340px;padding:6px;border:1px solid #bcc4d4}
+    textarea{height:60px}
+  </style>
+</head>
+<body>
+  <!--
+    This page mimics the structure of the shcilestamp.com e-Stamping
+    "Create Submission" form: a table layout where the field label lives in a
+    sibling <td> (not a <label>), and inputs carry cryptic server-generated
+    name/id attributes. It is used only to verify the DocGalaxy autofill
+    bookmarklet maps labels -> fields correctly.
+  -->
+  <h2>e-Stamp Online Data Entry (Mock Harness)</h2>
+  <form id="estampForm" onsubmit="return false;">
+    <table>
+      <tr>
+        <td class="lbl">Stamp Duty Purchased by</td>
+        <td><input type="text" id="ctl00_cph_txtPurBy" name="ctl00$cph$txtPurBy" /></td>
+      </tr>
+      <tr>
+        <td class="lbl">Description of Document</td>
+        <td><textarea id="ctl00_cph_txtDesc" name="ctl00$cph$txtDesc"></textarea></td>
+      </tr>
+      <tr>
+        <td class="lbl">Consideration of Property (Rs.)</td>
+        <td><input type="text" id="ctl00_cph_txtConsidr" name="ctl00$cph$txtConsidr" /></td>
+      </tr>
+      <tr>
+        <td class="lbl">Name and Address of the First Party</td>
+        <td><input type="text" id="ctl00_cph_txtFp" name="ctl00$cph$txtFp" /></td>
+      </tr>
+      <tr>
+        <td class="lbl">Name and Address of the Second Party</td>
+        <td><input type="text" id="ctl00_cph_txtSp" name="ctl00$cph$txtSp" /></td>
+      </tr>
+      <tr>
+        <td class="lbl">Stamp Duty Amount</td>
+        <td><input type="text" id="ctl00_cph_txtDuty" name="ctl00$cph$txtDuty" /></td>
+      </tr>
+      <tr>
+        <td class="lbl">Stamp Duty Paid by</td>
+        <td>
+          <select id="ctl00_cph_ddlPaidBy" name="ctl00$cph$ddlPaidBy">
+            <option value="">--Select--</option>
+            <option value="1">First Party</option>
+            <option value="2">Second Party</option>
+            <option value="3">Both Parties</option>
+          </select>
+        </td>
+      </tr>
+    </table>
+  </form>
+</body>
+</html>
