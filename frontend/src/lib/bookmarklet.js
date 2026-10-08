@@ -25,15 +25,15 @@ const FIELDS = [
   { f: "article", rules: [["article"]], names: ["articleno", "txtarticle"] },
   { f: "consideration_price", rules: [["consideration"]], names: ["considerationprice", "considervalue", "considr", "considamt"] },
 
-  { f: "first_party_name", rules: [["first party", "name"], ["name and address of the first party"], ["first party"]], names: ["firstpartyname", "fpname"] },
-  { f: "first_party_address1", rules: [["first party", "address"]], names: ["firstpartyaddress", "fpaddress"] },
+  { f: "first_party_name", rules: [["first party", "name"], ["name and address of the first party"]], neg: ["mobile", "phone", "email", "e-mail"], names: ["firstpartyname", "fpname"] },
+  { f: "first_party_address1", rules: [["first party", "address"]], neg: ["mobile", "phone", "email", "e-mail"], names: ["firstpartyaddress", "fpaddress"] },
   { f: "first_party_pin", rules: [["first party", "pin"], ["first party", "pincode"]], names: ["firstpartypin", "fppin"] },
   { f: "first_party_pan", rules: [["first party", "pan"]], names: ["firstpartypan", "fppan"] },
   { f: "first_party_mobile", rules: [["first party", "mobile"], ["first party", "phone"], ["first party", "contact"]], names: ["firstpartymobile", "fpmobile", "fpphone"] },
   { f: "first_party_email", rules: [["first party", "email"], ["first party", "e-mail"]], names: ["firstpartyemail", "fpemail"] },
 
-  { f: "second_party_name", rules: [["second party", "name"], ["name and address of the second party"], ["second party"]], names: ["secondpartyname", "spname"] },
-  { f: "second_party_address1", rules: [["second party", "address"]], names: ["secondpartyaddress", "spaddress"] },
+  { f: "second_party_name", rules: [["second party", "name"], ["name and address of the second party"]], neg: ["mobile", "phone", "email", "e-mail"], names: ["secondpartyname", "spname"] },
+  { f: "second_party_address1", rules: [["second party", "address"]], neg: ["mobile", "phone", "email", "e-mail"], names: ["secondpartyaddress", "spaddress"] },
   { f: "second_party_pin", rules: [["second party", "pin"], ["second party", "pincode"]], names: ["secondpartypin", "sppin"] },
   { f: "second_party_pan", rules: [["second party", "pan"]], names: ["secondpartypan", "sppan"] },
   { f: "second_party_mobile", rules: [["second party", "mobile"], ["second party", "phone"], ["second party", "contact"]], names: ["secondpartymobile", "spmobile", "spphone"] },
@@ -73,6 +73,7 @@ function ctxOf(el){
 }
 function nameOf(el){return (el.name+' '+el.id).toLowerCase().replace(/[^a-z0-9]/g,'');}
 function scoreField(F,ctx,ctxNS,nm){
+ if(F.neg){for(var j=0;j<F.neg.length;j++){var nt=norm(F.neg[j]);if(nt&&ctx.indexOf(nt)>-1)return 0;}}
  var score=0;
  (F.rules||[]).forEach(function(rule){
   var ok=true,s=0;
