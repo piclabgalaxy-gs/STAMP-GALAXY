@@ -103,6 +103,7 @@ class AdminLogin(BaseModel):
 class OrderData(BaseModel):
     purchased_by: Optional[str] = ""
     description_of_document: Optional[str] = ""
+    article: Optional[str] = ""
     consideration_price: Optional[str] = ""
     first_party_name: Optional[str] = ""
     first_party_address1: Optional[str] = ""

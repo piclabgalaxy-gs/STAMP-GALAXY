@@ -11,6 +11,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -23,13 +24,13 @@ import {
 } from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
 import {
-  PURCHASED_BY, STAMP_DUTY_PAID_BY, GENDER_OPTIONS, MODE_OF_PAYMENT,
+  STAMP_DUTY_PAID_BY, GENDER_OPTIONS, MODE_OF_PAYMENT,
   PROOF_OF_IDENTITY, PROOF_OF_RESIDENCE,
 } from "@/data/options";
 import { toast } from "sonner";
 
 const EMPTY = {
-  purchased_by: "", description_of_document: "", consideration_price: "",
+  purchased_by: "", description_of_document: "", article: "", consideration_price: "",
   first_party_name: "", first_party_address1: "", first_party_address2: "", first_party_address3: "",
   first_party_pin: "", first_party_pan: "",
   second_party_name: "", second_party_address1: "", second_party_address2: "", second_party_address3: "",
@@ -39,7 +40,12 @@ const EMPTY = {
   first_party_mobile: "", first_party_email: "", second_party_mobile: "", second_party_email: "",
 };
 
-function TextField({ field, label, placeholder, value, disabled, onChange }) {
+function TextField({ field, label, placeholder, value, disabled, onChange, type = "text" }) {
+  const handleChange = (e) => {
+    let v = e.target.value;
+    if (type === "number") v = v.replace(/[^0-9.]/g, "");
+    onChange(field, v);
+  };
   return (
     <div>
       <Label htmlFor={field} className="text-sm text-slate-700">{label}</Label>
@@ -48,7 +54,8 @@ function TextField({ field, label, placeholder, value, disabled, onChange }) {
         data-testid={`field-${field}`}
         value={value || ""}
         disabled={disabled}
-        onChange={(e) => onChange(field, e.target.value)}
+        inputMode={type === "number" ? "decimal" : undefined}
+        onChange={handleChange}
         placeholder={placeholder}
         className="mt-1.5 border-slate-300 disabled:opacity-100 disabled:bg-slate-50"
       />
@@ -90,7 +97,7 @@ function Section({ icon: Icon, title, children }) {
   );
 }
 
-function DocumentCombobox({ value, onChange, articles, disabled }) {
+function ArticleCombobox({ value, onChange, articles, disabled }) {
   const [open, setOpen] = useState(false);
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -99,27 +106,27 @@ function DocumentCombobox({ value, onChange, articles, disabled }) {
           variant="outline"
           role="combobox"
           disabled={disabled}
-          data-testid="document-combobox-trigger"
+          data-testid="article-combobox-trigger"
           className="w-full justify-between border-slate-300 font-normal disabled:opacity-100 disabled:bg-slate-50"
         >
-          <span className="truncate text-left">{value || "Search & select document type…"}</span>
+          <span className="truncate text-left">{value || "Type to search & select an article…"}</span>
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
         <Command>
-          <CommandInput placeholder="Search Gujarat stamp duty articles…" data-testid="document-combobox-search" />
+          <CommandInput placeholder="Type article name… e.g. Affidavit, Lease" data-testid="article-combobox-search" />
           <CommandList>
-            <CommandEmpty>No document found.</CommandEmpty>
+            <CommandEmpty>No matching article found.</CommandEmpty>
             <CommandGroup>
-              {articles.map((a) => {
-                const label = `${a.description} (Art. ${a.article})`;
+              {articles.map((a, i) => {
+                const label = `${a.description} (Art. ${a.article.trim()})`;
                 return (
                   <CommandItem
-                    key={a.article + a.description}
+                    key={`${a.article}-${i}`}
                     value={label}
-                    onSelect={() => { onChange("description_of_document", label); setOpen(false); }}
-                    data-testid={`document-option-${a.article}`}
+                    onSelect={() => { onChange("article", label); setOpen(false); }}
+                    data-testid={`article-option-${i}`}
                   >
                     <Check className={cn("mr-2 h-4 w-4", value === label ? "opacity-100" : "opacity-0")} />
                     <span className="text-sm">{label}</span>
@@ -260,12 +267,24 @@ export default function EStampingForm() {
           <div className="space-y-6 lg:col-span-2">
             <Section icon={FileText} title="Document Details">
               <div className="grid gap-4 sm:grid-cols-2">
-                <SelectField field="purchased_by" label="Purchased By" options={PURCHASED_BY} value={data.purchased_by} disabled={readOnly} onChange={update} />
-                <TextField field="consideration_price" label="Consideration Price (₹)" placeholder="e.g. 5000000" value={data.consideration_price} disabled={readOnly} onChange={update} />
+                <TextField field="purchased_by" label="Purchased By" placeholder="e.g. First Party / name" value={data.purchased_by} disabled={readOnly} onChange={update} />
+                <TextField field="consideration_price" label="Consideration Price (₹)" type="number" placeholder="e.g. 5000000" value={data.consideration_price} disabled={readOnly} onChange={update} />
                 <div className="sm:col-span-2">
-                  <Label className="text-sm text-slate-700">Description of Document</Label>
+                  <Label htmlFor="description_of_document" className="text-sm text-slate-700">Description of Document</Label>
+                  <Textarea
+                    id="description_of_document"
+                    data-testid="field-description_of_document"
+                    value={data.description_of_document || ""}
+                    disabled={readOnly}
+                    onChange={(e) => update("description_of_document", e.target.value)}
+                    placeholder="Describe the document / transaction details…"
+                    className="mt-1.5 min-h-[90px] border-slate-300 disabled:opacity-100 disabled:bg-slate-50"
+                  />
+                </div>
+                <div className="sm:col-span-2">
+                  <Label className="text-sm text-slate-700">Article</Label>
                   <div className="mt-1.5">
-                    <DocumentCombobox value={data.description_of_document} onChange={update} articles={articles} disabled={readOnly} />
+                    <ArticleCombobox value={data.article} onChange={update} articles={articles} disabled={readOnly} />
                   </div>
                 </div>
               </div>
@@ -319,6 +338,10 @@ export default function EStampingForm() {
               <Card className="border border-slate-200 bg-white p-6">
                 <h3 className="font-head text-lg font-semibold text-slate-900">Summary</h3>
                 <dl className="mt-4 space-y-3 text-sm">
+                  <div>
+                    <dt className="text-slate-500">Article</dt>
+                    <dd className="font-medium text-slate-900">{data.article || "—"}</dd>
+                  </div>
                   <div>
                     <dt className="text-slate-500">Document</dt>
                     <dd className="font-medium text-slate-900">{data.description_of_document || "—"}</dd>

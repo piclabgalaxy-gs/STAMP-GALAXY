@@ -1,9 +1,10 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { Stamp, Lock, ArrowLeft } from "lucide-react";
+import { Lock, ArrowLeft } from "lucide-react";
 import api, { formatApiError } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import SEO from "@/components/SEO";
+import Logo from "@/components/Logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -39,12 +40,7 @@ export default function AdminLogin() {
         <Link to="/" className="mb-6 inline-flex items-center gap-1 text-sm text-slate-400 hover:text-white">
           <ArrowLeft className="h-4 w-4" /> Back to home
         </Link>
-        <div className="flex items-center gap-2">
-          <span className="flex h-9 w-9 items-center justify-center rounded-md bg-white text-slate-900">
-            <Stamp className="h-5 w-5" />
-          </span>
-          <span className="font-head text-xl font-bold">DocGalaxy Admin</span>
-        </div>
+        <Logo to="/" dark />
         <div className="mt-8 flex items-center gap-2">
           <Lock className="h-5 w-5 text-amber-400" />
           <h1 className="font-head text-2xl font-bold">Admin Login</h1>

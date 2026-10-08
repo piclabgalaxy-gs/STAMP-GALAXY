@@ -8,6 +8,8 @@ export function buildBookmarklet(order) {
     "purchased by": d.purchased_by,
     "description of document": d.description_of_document,
     "description": d.description_of_document,
+    "article": d.article,
+    "article no": d.article,
     "consideration price": d.consideration_price,
     "consideration": d.consideration_price,
     "first party name": d.first_party_name,

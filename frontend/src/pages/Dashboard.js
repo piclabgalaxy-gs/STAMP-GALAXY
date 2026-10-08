@@ -46,7 +46,7 @@ export default function Dashboard() {
         <div className="flex items-center gap-2">
           <FileText className="h-5 w-5 shrink-0 text-slate-400" />
           <p className="truncate font-head text-base font-semibold text-slate-900">
-            {o.data?.description_of_document || "Untitled estamping document"}
+            {o.data?.article || o.data?.description_of_document || "Untitled estamping document"}
           </p>
         </div>
         <p className="mt-1 text-sm text-slate-500">

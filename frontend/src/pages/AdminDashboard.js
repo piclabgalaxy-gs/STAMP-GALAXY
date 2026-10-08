@@ -6,6 +6,7 @@ import {
 import api from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import SEO from "@/components/SEO";
+import Logo from "@/components/Logo";
 import { buildBookmarklet } from "@/lib/bookmarklet";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -28,7 +29,7 @@ function fmtDate(iso) {
 
 const FIELD_LABELS = {
   purchased_by: "Purchased By", description_of_document: "Description of Document",
-  consideration_price: "Consideration Price", first_party_name: "First Party Name",
+  article: "Article", consideration_price: "Consideration Price", first_party_name: "First Party Name",
   first_party_address1: "First Party Address 1", first_party_address2: "First Party Address 2",
   first_party_address3: "First Party Address 3", first_party_pin: "First Party Pin Code",
   first_party_pan: "First Party PAN", second_party_name: "Second Party Name",
@@ -168,12 +169,7 @@ export default function AdminDashboard() {
       <SEO title="Admin Dashboard | DocGalaxy E-Stamping" description="DocGalaxy estamping admin dashboard." path="/admin" />
       <header className="sticky top-0 z-40 border-b border-slate-200 bg-slate-900 text-white">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-2">
-            <span className="flex h-9 w-9 items-center justify-center rounded-md bg-white text-slate-900">
-              <Stamp className="h-5 w-5" />
-            </span>
-            <span className="font-head text-lg font-bold">DocGalaxy Admin</span>
-          </div>
+          <Logo to={null} dark />
           <Button
             data-testid="admin-logout-btn"
             variant="ghost"
@@ -232,7 +228,7 @@ export default function AdminDashboard() {
                             <div className="text-xs text-slate-500">{o.customer_mobile}</div>
                           </TableCell>
                           <TableCell className="max-w-[220px]">
-                            <span className="line-clamp-2 text-sm text-slate-700">{o.data?.description_of_document || "—"}</span>
+                            <span className="line-clamp-2 text-sm text-slate-700">{o.data?.article || o.data?.description_of_document || "—"}</span>
                           </TableCell>
                           <TableCell>
                             {o.status === "submitted" ? (

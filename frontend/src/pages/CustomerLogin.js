@@ -1,9 +1,10 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { Stamp, Smartphone, ArrowLeft } from "lucide-react";
+import { Smartphone, ArrowLeft } from "lucide-react";
 import api, { formatApiError } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import SEO from "@/components/SEO";
+import Logo from "@/components/Logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -64,12 +65,7 @@ export default function CustomerLogin() {
       />
       <div className="grid flex-1 lg:grid-cols-2">
         <div className="relative hidden flex-col justify-between bg-slate-900 p-12 text-white lg:flex">
-          <Link to="/" className="flex items-center gap-2">
-            <span className="flex h-9 w-9 items-center justify-center rounded-md bg-white text-slate-900">
-              <Stamp className="h-5 w-5" />
-            </span>
-            <span className="font-head text-xl font-bold">DocGalaxy</span>
-          </Link>
+          <Logo to="/" dark />
           <div>
             <h1 className="font-head text-4xl font-bold leading-tight">
               Online Estamping,<br />made simple.
