@@ -44,9 +44,9 @@ const FIELD_LABELS = {
   second_party_email: "Second Party Email",
 };
 
-function BookmarkletLink({ order }) {
+function BookmarkletLink({ autofillKey, order }) {
   const ref = useRef(null);
-  const href = buildBookmarklet(order);
+  const href = buildBookmarklet(autofillKey);
   const label = (order.data?.purchased_by || "").trim() || order.customer_name || "Autofill";
   useEffect(() => {
     if (ref.current) ref.current.setAttribute("href", href);
@@ -57,16 +57,16 @@ function BookmarkletLink({ order }) {
       data-testid={`bookmarklet-link-${order.id}`}
       className="inline-flex cursor-move items-center gap-2 rounded-md bg-amber-400 px-4 py-2 text-sm font-semibold text-slate-900 transition-colors hover:bg-amber-300"
       onClick={(e) => e.preventDefault()}
-      title="Drag me to your bookmarks bar once — it always fills this order's latest data"
+      title="Drag me to your bookmarks bar once — it always fills the currently active order's latest data"
     >
       <Bookmark className="h-4 w-4 shrink-0" /> <span className="max-w-[220px] truncate">{label}</span>
     </a>
   );
 }
 
-function OrderDetailDialog({ order, children }) {
+function OrderDetailDialog({ order, autofillKey, children }) {
   const [copied, setCopied] = useState(false);
-  const href = buildBookmarklet(order);
+  const href = buildBookmarklet(autofillKey);
   const copy = async () => {
     try {
       await navigator.clipboard.writeText(href);
@@ -77,9 +77,17 @@ function OrderDetailDialog({ order, children }) {
       toast.error("Copy failed. Please copy manually.");
     }
   };
+  const selectForAutofill = async () => {
+    try {
+      await api.post("/autofill/select", { order_id: order.id });
+      toast.success(`"${(order.data?.purchased_by || order.customer_name || "This order")}" is now active for the Autofill bookmarklet.`);
+    } catch (e) {
+      toast.error("Could not set this order active for autofill.");
+    }
+  };
   const d = order.data || {};
   return (
-    <Dialog>
+    <Dialog onOpenChange={(open) => { if (open) selectForAutofill(); }}>
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="max-h-[85vh] max-w-2xl overflow-y-auto" data-testid={`order-detail-${order.id}`}>
         <DialogHeader>
@@ -93,11 +101,11 @@ function OrderDetailDialog({ order, children }) {
           <div className="flex items-start gap-2">
             <Info className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
             <div>
-              <p className="text-sm font-semibold text-amber-900">Autofill Bookmarklet for shcilestamp.com</p>
+              <p className="text-sm font-semibold text-amber-900">Universal Autofill Bookmarklet for shcilestamp.com</p>
               <p className="mt-1 text-xs text-amber-700">
-                Drag this button to your browser's bookmarks bar <strong>once</strong>. Then, on the
-                shcilestamp.com e-stamping form, click the saved bookmark — it always fetches this order's
-                latest data automatically. No need to drag it again.
+                Opening this order marks it as the <strong>active</strong> order. Drag this button to your
+                bookmarks bar <strong>once</strong> — on the shcilestamp.com form, click the saved bookmark and
+                it fills whichever order is currently active. The same bookmark works for every order; no need to drag again.
               </p>
               <p className="mt-1 text-xs text-amber-700">
                 <strong>Tip:</strong> after clicking, press <strong>F12 → Console</strong> to see which fields were detected and filled.
@@ -105,7 +113,7 @@ function OrderDetailDialog({ order, children }) {
             </div>
           </div>
           <div className="mt-3 flex flex-wrap items-center gap-3">
-            <BookmarkletLink order={order} />
+            <BookmarkletLink autofillKey={autofillKey} order={order} />
             <Button variant="outline" size="sm" onClick={copy} data-testid={`copy-bookmarklet-${order.id}`} className="gap-2 border-slate-300">
               {copied ? <Check className="h-4 w-4 text-emerald-600" /> : <Copy className="h-4 w-4" />}
               {copied ? "Copied" : "Copy Code"}
@@ -128,7 +136,8 @@ function OrderDetailDialog({ order, children }) {
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
+  const autofillKey = user?.autofill_key || "";
   const [orders, setOrders] = useState([]);
   const [reviews, setReviews] = useState([]);
   const [query, setQuery] = useState("");
@@ -287,7 +296,7 @@ export default function AdminDashboard() {
                           </TableCell>
                           <TableCell className="text-xs text-slate-500">{fmtDate(o.updated_at)}</TableCell>
                           <TableCell className="text-right">
-                            <OrderDetailDialog order={o}>
+                            <OrderDetailDialog order={o} autofillKey={autofillKey}>
                               <Button variant="outline" size="sm" data-testid={`view-order-${o.id}`} className="border-slate-300">
                                 View & Bookmarklet
                               </Button>

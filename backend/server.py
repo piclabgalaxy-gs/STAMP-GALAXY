@@ -183,7 +183,7 @@ async def admin_login(body: AdminLogin):
     if not user or not verify_password(body.password, user.get("password_hash", "")):
         raise HTTPException(status_code=401, detail="Invalid email or password")
     token = create_token(user["id"], "admin")
-    return {"token": token, "user": {"id": user["id"], "email": user["email"], "name": user.get("name", "Admin"), "role": "admin"}}
+    return {"token": token, "user": {"id": user["id"], "email": user["email"], "name": user.get("name", "Admin"), "role": "admin", "autofill_key": user.get("autofill_key", "")}}
 
 
 @api_router.get("/auth/me")
@@ -247,6 +247,34 @@ async def order_autofill(order_id: str):
     order = await db.orders.find_one({"id": order_id}, {"_id": 0})
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
+    return order.get("data", {})
+
+
+@api_router.post("/autofill/select")
+async def autofill_select(body: dict, admin: dict = Depends(get_admin_user)):
+    order_id = body.get("order_id")
+    order = await db.orders.find_one({"id": order_id}, {"_id": 0})
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    key = admin.get("autofill_key")
+    if not key:
+        raise HTTPException(status_code=400, detail="Admin autofill key missing")
+    await db.autofill_current.update_one(
+        {"key": key},
+        {"$set": {"key": key, "order_id": order_id, "updated_at": now_iso()}},
+        upsert=True,
+    )
+    return {"message": "Order set as active for autofill", "order_id": order_id}
+
+
+@api_router.get("/autofill/current/{key}")
+async def autofill_current(key: str):
+    sel = await db.autofill_current.find_one({"key": key})
+    if not sel:
+        raise HTTPException(status_code=404, detail="No active order selected for autofill")
+    order = await db.orders.find_one({"id": sel["order_id"]}, {"_id": 0})
+    if not order:
+        raise HTTPException(status_code=404, detail="Selected order not found")
     return order.get("data", {})
 
 
@@ -373,12 +401,20 @@ async def startup():
             "password_hash": hash_password(admin_password),
             "name": "DocGalaxy Admin",
             "role": "admin",
+            "autofill_key": uuid.uuid4().hex,
             "created_at": now_iso(),
         })
         logger.info(f"Seeded admin: {admin_email}")
-    elif not verify_password(admin_password, existing.get("password_hash", "")):
-        await db.users.update_one({"id": existing["id"]}, {"$set": {"password_hash": hash_password(admin_password)}})
-        logger.info("Updated admin password")
+    else:
+        updates = {}
+        if not verify_password(admin_password, existing.get("password_hash", "")):
+            updates["password_hash"] = hash_password(admin_password)
+            logger.info("Updated admin password")
+        if not existing.get("autofill_key"):
+            updates["autofill_key"] = uuid.uuid4().hex
+            logger.info("Generated admin autofill_key")
+        if updates:
+            await db.users.update_one({"id": existing["id"]}, {"$set": updates})
 
 
 @app.on_event("shutdown")

@@ -9,7 +9,10 @@
 //   in the wrong box.
 // - Fields with an empty/null value in the order are SKIPPED (left blank).
 // - NO alerts: fills silently and logs a diagnostic table to the console.
-// - NO stale data: fetches the LATEST order data live at click time.
+// - UNIVERSAL & LIVE: the bookmarklet contains NO order id. It is built from the
+//   admin's stable autofill key and, at click time, fetches whichever order is
+//   currently "active" for that admin (set by opening an order in the dashboard).
+//   One saved bookmark works for any order and never needs re-dragging.
 //
 // Matching: for each input we build a "context" from its label (sibling <td>,
 // <label for>, aria-label, placeholder, name, id). Each DocGalaxy field defines
@@ -51,8 +54,8 @@ const FIELDS = [
   { f: "proof_of_residence", rules: [["proof of residence"], ["residence proof"]], names: ["proofofresidence", "residenceproof"] },
 ];
 
-export function buildBookmarklet(order) {
-  const url = `${API}/orders/${order.id}/autofill`;
+export function buildBookmarklet(autofillKey) {
+  const url = `${API}/autofill/current/${autofillKey}`;
   const fields = JSON.stringify(FIELDS);
 
   const code = `(function(){try{var URL=${JSON.stringify(url)};var FIELDS=${fields};
