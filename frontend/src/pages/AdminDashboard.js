@@ -1,12 +1,13 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  Stamp, LogOut, Copy, Check, X, Star, Package, MessageSquare, Bookmark, Info,
+  Stamp, LogOut, Copy, Check, X, Star, Package, MessageSquare, Bookmark, Info, Search,
 } from "lucide-react";
 import api from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import SEO from "@/components/SEO";
 import Logo from "@/components/Logo";
+import { Input } from "@/components/ui/input";
 import { buildBookmarklet } from "@/lib/bookmarklet";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -46,6 +47,7 @@ const FIELD_LABELS = {
 function BookmarkletLink({ order }) {
   const ref = useRef(null);
   const href = buildBookmarklet(order);
+  const label = (order.data?.purchased_by || "").trim() || order.customer_name || "Autofill";
   useEffect(() => {
     if (ref.current) ref.current.setAttribute("href", href);
   }, [href]);
@@ -55,9 +57,9 @@ function BookmarkletLink({ order }) {
       data-testid={`bookmarklet-link-${order.id}`}
       className="inline-flex cursor-move items-center gap-2 rounded-md bg-amber-400 px-4 py-2 text-sm font-semibold text-slate-900 transition-colors hover:bg-amber-300"
       onClick={(e) => e.preventDefault()}
-      title="Drag me to your bookmarks bar"
+      title="Drag me to your bookmarks bar once — it always fills this order's latest data"
     >
-      <Bookmark className="h-4 w-4" /> SHCIL Autofill
+      <Bookmark className="h-4 w-4 shrink-0" /> <span className="max-w-[220px] truncate">{label}</span>
     </a>
   );
 }
@@ -93,12 +95,12 @@ function OrderDetailDialog({ order, children }) {
             <div>
               <p className="text-sm font-semibold text-amber-900">Autofill Bookmarklet for shcilestamp.com</p>
               <p className="mt-1 text-xs text-amber-700">
-                Drag the button to your browser's bookmarks bar, open the shcilestamp.com e-stamping form,
-                then click the saved bookmark to auto-fill the fields. It fetches the latest order data live.
+                Drag this button to your browser's bookmarks bar <strong>once</strong>. Then, on the
+                shcilestamp.com e-stamping form, click the saved bookmark — it always fetches this order's
+                latest data automatically. No need to drag it again.
               </p>
               <p className="mt-1 text-xs text-amber-700">
-                <strong>Debug:</strong> after clicking, press <strong>F12 → Console</strong> to see the list of field
-                names detected on the page and how many were filled. If you re-generate, drag the button again to refresh the bookmark.
+                <strong>Tip:</strong> after clicking, press <strong>F12 → Console</strong> to see which fields were detected and filled.
               </p>
             </div>
           </div>
@@ -129,6 +131,7 @@ export default function AdminDashboard() {
   const { logout } = useAuth();
   const [orders, setOrders] = useState([]);
   const [reviews, setReviews] = useState([]);
+  const [query, setQuery] = useState("");
 
   const loadOrders = async () => {
     const { data } = await api.get("/admin/orders");
@@ -167,6 +170,20 @@ export default function AdminDashboard() {
 
   const submittedCount = orders.filter((o) => o.status === "submitted").length;
   const pendingReviews = reviews.filter((r) => r.status === "pending").length;
+
+  const q = query.trim().toLowerCase();
+  const filteredOrders = q
+    ? orders.filter((o) => {
+        const d = o.data || {};
+        const hay = [
+          o.customer_name, o.customer_mobile, d.purchased_by,
+          d.first_party_name, d.second_party_name,
+          d.first_party_mobile, d.second_party_mobile,
+          d.article, d.description_of_document,
+        ].filter(Boolean).join(" ").toLowerCase();
+        return hay.includes(q);
+      })
+    : orders;
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -208,6 +225,21 @@ export default function AdminDashboard() {
           </TabsList>
 
           <TabsContent value="orders" className="mt-4">
+            <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div className="relative w-full sm:max-w-md">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <Input
+                  data-testid="orders-search-input"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Search by customer name, phone, or document type…"
+                  className="border-slate-300 pl-9"
+                />
+              </div>
+              <p className="text-xs text-slate-500" data-testid="orders-result-count">
+                Showing {filteredOrders.length} of {orders.length} orders
+              </p>
+            </div>
             <Card className="border border-slate-200 bg-white">
               <div className="overflow-x-auto">
                 <Table data-testid="admin-orders-table">
@@ -222,10 +254,10 @@ export default function AdminDashboard() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {orders.length === 0 ? (
-                      <TableRow><TableCell colSpan={6} className="py-10 text-center text-slate-500">No orders yet.</TableCell></TableRow>
+                    {filteredOrders.length === 0 ? (
+                      <TableRow><TableCell colSpan={6} className="py-10 text-center text-slate-500">{orders.length === 0 ? "No orders yet." : "No orders match your search."}</TableCell></TableRow>
                     ) : (
-                      orders.map((o) => (
+                      filteredOrders.map((o) => (
                         <TableRow key={o.id} data-testid={`admin-order-row-${o.id}`}>
                           <TableCell>
                             <div className="font-medium text-slate-900">{o.customer_name || "—"}</div>
