@@ -22,6 +22,7 @@ export default function CustomerLogin() {
   const [name, setName] = useState("");
   const [otp, setOtp] = useState("");
   const [loading, setLoading] = useState(false);
+  const [errorText, setErrorText] = useState("");
   const confirmationRef = useRef(null);
   const recaptchaRef = useRef(null);
 
@@ -32,35 +33,43 @@ export default function CustomerLogin() {
     return recaptchaRef.current;
   };
 
+  const resetRecaptcha = () => {
+    try { recaptchaRef.current?.clear(); } catch (_) {}
+    recaptchaRef.current = null;
+  };
+
   const requestOtp = async () => {
+    setErrorText("");
     if (mobile.length !== 10) {
       toast.error("Please enter a valid 10-digit mobile number.");
+      return;
+    }
+    if (!document.getElementById("recaptcha-container")) {
+      toast.error("reCAPTCHA container not ready. Please reload the page.");
       return;
     }
     setLoading(true);
     try {
       const verifier = getRecaptcha();
+      await verifier.render();
       const result = await signInWithPhoneNumber(auth, `+91${mobile}`, verifier);
       confirmationRef.current = result;
       setStep(2);
       toast.success(`OTP sent to +91 ${mobile}`);
     } catch (e) {
       console.error("Firebase OTP error:", e);
-      try {
-        recaptchaRef.current?.clear();
-      } catch (_) {}
-      recaptchaRef.current = null;
-      const code = e?.code || "";
-      if (code.includes("invalid-phone-number")) toast.error("Invalid phone number.");
-      else if (code.includes("too-many-requests")) toast.error("Too many attempts. Please try again later.");
-      else if (code.includes("captcha")) toast.error("reCAPTCHA failed. Please reload and try again.");
-      else toast.error("Could not send OTP. Ensure this site is authorized in Firebase.");
+      resetRecaptcha();
+      const code = e?.code || "unknown-error";
+      const msg = e?.message || "";
+      setErrorText(`${code}${msg ? ` — ${msg}` : ""}`);
+      toast.error(`OTP failed: ${code}`);
     } finally {
       setLoading(false);
     }
   };
 
   const verifyOtp = async () => {
+    setErrorText("");
     if (otp.length < 6) {
       toast.error("Please enter the 6-digit OTP.");
       return;
@@ -80,9 +89,13 @@ export default function CustomerLogin() {
       navigate("/dashboard");
     } catch (e) {
       const code = e?.code || "";
+      const msg = e?.message || "";
       if (code.includes("invalid-verification-code")) toast.error("Incorrect OTP. Please try again.");
       else if (code.includes("code-expired")) toast.error("OTP expired. Please request a new one.");
-      else toast.error(formatApiError(e.response?.data?.detail) || "Verification failed. Please try again.");
+      else {
+        setErrorText(`${code || "verify-error"}${msg ? ` — ${msg}` : ""}`);
+        toast.error(formatApiError(e.response?.data?.detail) || `Verification failed: ${code}`);
+      }
     } finally {
       setLoading(false);
     }
@@ -121,6 +134,12 @@ export default function CustomerLogin() {
               <h2 className="font-head text-2xl font-bold text-slate-900">Customer Login</h2>
             </div>
             <p className="mt-1 text-sm text-slate-500">Secure OTP login powered by Firebase.</p>
+
+            {errorText && (
+              <div data-testid="firebase-error" className="mt-4 rounded-md border border-red-200 bg-red-50 p-3 text-xs leading-relaxed text-red-700 break-words">
+                <span className="font-semibold">Firebase error:</span> {errorText}
+              </div>
+            )}
 
             {step === 1 ? (
               <div className="mt-8 space-y-5">
