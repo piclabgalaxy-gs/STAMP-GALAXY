@@ -1,6 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Smartphone, ArrowLeft } from "lucide-react";
+import { RecaptchaVerifier, signInWithPhoneNumber } from "firebase/auth";
+import { auth } from "@/lib/firebase";
 import api, { formatApiError } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import SEO from "@/components/SEO";
@@ -20,19 +22,39 @@ export default function CustomerLogin() {
   const [name, setName] = useState("");
   const [otp, setOtp] = useState("");
   const [loading, setLoading] = useState(false);
+  const confirmationRef = useRef(null);
+  const recaptchaRef = useRef(null);
+
+  const getRecaptcha = () => {
+    if (!recaptchaRef.current) {
+      recaptchaRef.current = new RecaptchaVerifier(auth, "recaptcha-container", { size: "invisible" });
+    }
+    return recaptchaRef.current;
+  };
 
   const requestOtp = async () => {
-    if (!mobile.trim()) {
-      toast.error("Please enter your mobile number.");
+    if (mobile.length !== 10) {
+      toast.error("Please enter a valid 10-digit mobile number.");
       return;
     }
     setLoading(true);
     try {
-      const { data } = await api.post("/auth/customer/request-otp", { mobile, name });
+      const verifier = getRecaptcha();
+      const result = await signInWithPhoneNumber(auth, `+91${mobile}`, verifier);
+      confirmationRef.current = result;
       setStep(2);
-      toast.success(`OTP sent! Demo OTP: ${data.demo_otp}`, { duration: 8000 });
+      toast.success(`OTP sent to +91 ${mobile}`);
     } catch (e) {
-      toast.error(formatApiError(e.response?.data?.detail));
+      console.error("Firebase OTP error:", e);
+      try {
+        recaptchaRef.current?.clear();
+      } catch (_) {}
+      recaptchaRef.current = null;
+      const code = e?.code || "";
+      if (code.includes("invalid-phone-number")) toast.error("Invalid phone number.");
+      else if (code.includes("too-many-requests")) toast.error("Too many attempts. Please try again later.");
+      else if (code.includes("captcha")) toast.error("reCAPTCHA failed. Please reload and try again.");
+      else toast.error("Could not send OTP. Ensure this site is authorized in Firebase.");
     } finally {
       setLoading(false);
     }
@@ -43,14 +65,24 @@ export default function CustomerLogin() {
       toast.error("Please enter the 6-digit OTP.");
       return;
     }
+    if (!confirmationRef.current) {
+      toast.error("Please request an OTP first.");
+      setStep(1);
+      return;
+    }
     setLoading(true);
     try {
-      const { data } = await api.post("/auth/customer/verify-otp", { mobile, otp });
+      const cred = await confirmationRef.current.confirm(otp);
+      const idToken = await cred.user.getIdToken();
+      const { data } = await api.post("/auth/customer/firebase", { id_token: idToken, name });
       login(data.token, data.user);
       toast.success("Welcome to DocGalaxy!");
       navigate("/dashboard");
     } catch (e) {
-      toast.error(formatApiError(e.response?.data?.detail));
+      const code = e?.code || "";
+      if (code.includes("invalid-verification-code")) toast.error("Incorrect OTP. Please try again.");
+      else if (code.includes("code-expired")) toast.error("OTP expired. Please request a new one.");
+      else toast.error(formatApiError(e.response?.data?.detail) || "Verification failed. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -63,6 +95,7 @@ export default function CustomerLogin() {
         description="Login to DocGalaxy with your mobile number to start online estamping in Gujarat."
         path="/login"
       />
+      <div id="recaptcha-container" />
       <div className="grid flex-1 lg:grid-cols-2">
         <div className="relative hidden flex-col justify-between bg-slate-900 p-12 text-white lg:flex">
           <Logo to="/" dark />
@@ -87,6 +120,7 @@ export default function CustomerLogin() {
               <Smartphone className="h-6 w-6 text-blue-600" />
               <h2 className="font-head text-2xl font-bold text-slate-900">Customer Login</h2>
             </div>
+            <p className="mt-1 text-sm text-slate-500">Secure OTP login powered by Firebase.</p>
 
             {step === 1 ? (
               <div className="mt-8 space-y-5">
@@ -103,15 +137,18 @@ export default function CustomerLogin() {
                 </div>
                 <div>
                   <Label htmlFor="mobile">Mobile Number</Label>
-                  <Input
-                    id="mobile"
-                    data-testid="login-mobile-input"
-                    value={mobile}
-                    onChange={(e) => setMobile(e.target.value.replace(/[^0-9]/g, ""))}
-                    placeholder="10-digit mobile number"
-                    maxLength={10}
-                    className="mt-2 border-slate-300"
-                  />
+                  <div className="mt-2 flex items-center gap-2">
+                    <span className="flex h-10 items-center rounded-md border border-slate-300 bg-slate-50 px-3 text-sm text-slate-600">+91</span>
+                    <Input
+                      id="mobile"
+                      data-testid="login-mobile-input"
+                      value={mobile}
+                      onChange={(e) => setMobile(e.target.value.replace(/[^0-9]/g, ""))}
+                      placeholder="10-digit mobile number"
+                      maxLength={10}
+                      className="border-slate-300"
+                    />
+                  </div>
                 </div>
                 <Button
                   data-testid="request-otp-btn"
@@ -125,7 +162,7 @@ export default function CustomerLogin() {
             ) : (
               <div className="mt-8 space-y-5">
                 <p className="text-sm text-slate-600">
-                  Enter the 6-digit OTP sent to <span className="font-semibold text-slate-900">{mobile}</span>
+                  Enter the 6-digit OTP sent to <span className="font-semibold text-slate-900">+91 {mobile}</span>
                 </p>
                 <div className="flex justify-center">
                   <InputOTP maxLength={6} value={otp} onChange={setOtp} data-testid="login-otp-input">

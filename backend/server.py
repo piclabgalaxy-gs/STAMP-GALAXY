@@ -17,6 +17,7 @@ import random
 from datetime import datetime, timezone, timedelta
 import bcrypt
 import jwt
+from jwt import PyJWKClient
 
 from seed_data import GUJARAT_STAMP_ARTICLES, FAQS
 
@@ -27,6 +28,22 @@ db = client[os.environ['DB_NAME']]
 
 JWT_SECRET = os.environ['JWT_SECRET']
 JWT_ALGORITHM = "HS256"
+
+FIREBASE_PROJECT_ID = os.environ.get('FIREBASE_PROJECT_ID', '')
+_firebase_jwk_client = PyJWKClient(
+    "https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com"
+)
+
+
+def verify_firebase_token(id_token: str) -> dict:
+    signing_key = _firebase_jwk_client.get_signing_key_from_jwt(id_token)
+    return jwt.decode(
+        id_token,
+        signing_key.key,
+        algorithms=["RS256"],
+        audience=FIREBASE_PROJECT_ID,
+        issuer=f"https://securetoken.google.com/{FIREBASE_PROJECT_ID}",
+    )
 
 app = FastAPI()
 api_router = APIRouter(prefix="/api")
@@ -93,6 +110,11 @@ class CustomerOTPRequest(BaseModel):
 class CustomerOTPVerify(BaseModel):
     mobile: str
     otp: str
+
+
+class FirebaseLogin(BaseModel):
+    id_token: str
+    name: Optional[str] = ""
 
 
 class AdminLogin(BaseModel):
@@ -171,6 +193,42 @@ async def customer_verify_otp(body: CustomerOTPVerify):
         if record.get("name"):
             await db.users.update_one({"id": user["id"]}, {"$set": {"name": record["name"]}})
             user["name"] = record["name"]
+    user.pop("_id", None)
+    token = create_token(user["id"], "customer")
+    return {"token": token, "user": {k: v for k, v in user.items() if k != "_id"}}
+
+
+@api_router.post("/auth/customer/firebase")
+async def customer_firebase_login(body: FirebaseLogin):
+    try:
+        decoded = verify_firebase_token(body.id_token)
+    except Exception as e:
+        logger.warning(f"Firebase token verification failed: {e}")
+        raise HTTPException(status_code=401, detail="Invalid or expired login. Please try again.")
+    phone = decoded.get("phone_number") or ""
+    digits = "".join(ch for ch in phone if ch.isdigit())
+    mobile = digits[-10:] if len(digits) >= 10 else digits
+    if not mobile:
+        raise HTTPException(status_code=400, detail="Phone number missing in login token")
+    firebase_uid = decoded.get("user_id") or decoded.get("sub") or ""
+    name = (body.name or "").strip()
+    user = await db.users.find_one({"mobile": mobile, "role": "customer"}, {"_id": 0})
+    if not user:
+        user = {
+            "id": str(uuid.uuid4()),
+            "mobile": mobile,
+            "name": name,
+            "role": "customer",
+            "firebase_uid": firebase_uid,
+            "created_at": now_iso(),
+        }
+        await db.users.insert_one(dict(user))
+    else:
+        updates = {"firebase_uid": firebase_uid}
+        if name:
+            updates["name"] = name
+            user["name"] = name
+        await db.users.update_one({"id": user["id"]}, {"$set": updates})
     user.pop("_id", None)
     token = create_token(user["id"], "customer")
     return {"token": token, "user": {k: v for k, v in user.items() if k != "_id"}}
