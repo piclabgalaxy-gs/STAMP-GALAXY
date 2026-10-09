@@ -1,0 +1,27 @@
+{
+  "summary": "Full backend + frontend verification of UNIVERSAL autofill bookmarklet. 7/7 backend pytest cases pass. End-to-end Playwright flow proves one saved bookmark fills whichever order is active: (A) seeded orders A=KULDEEP PATGIR/A Kumar/500000 and B=RAMESH SHAH/B Patel/250000; (B) opened A's dialog -> POST /api/autofill/select fired (toast '...is now active for the Autofill bookmarklet'); (C) decoded bookmarklet href is BYTE-IDENTICAL across orders A and B (hrefA == hrefB), contains '/api/autofill/current/<32-hex-key>' and does NOT contain either order UUID; (D) GET /api/autofill/current/<key> (public, no auth) returns A's data after A opened, flips to B after B opened, flips back to A after A reopened; (E) UNIVERSAL FILL on /shcil-mock.html — ran the SAME decoded JS twice (A active then B active), fields #ctl00_cph_txtPurBy / #ctl00_cph_txtFp / #ctl00_cph_txtConsidr matched A then B values respectively; (F) no alert() dialogs fired; console still logs 'DocGalaxy Autofill' diagnostic + matched[]; bookmarklet button label still displays purchased_by ('KULDEEP PATGIR', 'RAMESH SHAH'); orders-search-input filters correctly (Showing 2 of 71 for 'RAMESH SHAH'); payment toggle fires 'Marked as paid' toast.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_universal_autofill.py",
+    "/app/test_reports/pytest/universal_autofill.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "GET /api/autofill/current/{key} is public (as required for cross-origin bookmarklet use). This exposes an order's full data payload to anyone who learns the 32-hex autofill_key. Risk is limited (key is 128-bit random, admin-only, and only one order is 'current' at a time), but consider: (a) adding a short TTL on autofill_current (e.g. 15 min since updated_at) so a stale key leak cannot be used forever; (b) regenerate autofill_key on admin password change / logout-all. Non-blocking.",
+    "selectForAutofill() is called from Dialog's onOpenChange(open=true) without awaiting toast dismissal; if the admin spam-opens multiple dialogs, the latest wins (acceptable). But there's no visual indicator in the orders table of which order is currently 'active'. Nice-to-have: add a small 'Active for Autofill' badge on the row whose id matches /api/autofill/current/<my-key>.",
+    "FIELDS constant is still re-inlined (JSON.stringified) into the bookmarklet string on every buildBookmarklet() call. Since autofill_key is stable per admin, the href is cacheable — could memoize buildBookmarklet(key) in a WeakMap. Minor.",
+    "server.py autofill_select accepts any body dict with 'order_id'; consider Pydantic model {order_id: str} for consistency with the rest of the API.",
+    "No index on db.autofill_current.key; fine at current scale but add a unique index on 'key' since it's upserted and queried by key."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_universal_autofill.py (new)"
+  ],
+  "success_rate": {"backend": "100% (7/7 pytest)", "frontend": "100% (all 10 Playwright assertions on universal fill flow)"},
+  "test_credentials": "Admin ashokashok7751@gmail.com / DocGalaxy@2026 (autofill_key returned on login & /auth/me); Customer any 10-digit mobile + name + OTP 123456",
+  "seed_data_creation": "During the Playwright run 2 submitted orders created via API: A (purchased_by=KULDEEP PATGIR, first_party_name=A Kumar, consideration_price=500000) and B (purchased_by=RAMESH SHAH, first_party_name=B Patel, consideration_price=250000). pytest fixture two_orders also seeds equivalent orders. Admin autofill_key observed in test run: e6468a703d99482a8103cda767d25ae6 (32-char hex).",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Backend endpoints verified: POST /api/autofill/select (admin only, upserts {key, order_id} in db.autofill_current) and GET /api/autofill/current/{key} (public). Frontend: BookmarkletLink receives autofillKey (NOT order id); buildBookmarklet(autofillKey) returns a universal href whose decoded JS fetches /api/autofill/current/<key>. OrderDetailDialog onOpenChange(open=true) calls selectForAutofill() which POSTs /autofill/select to mark the order active. To re-verify: login admin, open any two orders, assert their bookmarklet-link-<id> hrefs are equal and decoded JS contains /api/autofill/current/<32hex> and no order UUID; use /shcil-mock.html + page.evaluate(decodedJS) to confirm fills swap based on which dialog was last opened.",
+  "rca of the issue": "N/A — feature works correctly. One minor test artifact: assertion on shadcn Switch toggle text via inner_text() returned empty string on both sides (the Switch has no text node, only aria-checked), yet the toggle DID flip (verified by 'Marked as paid' toast visible in screenshot). Not a product bug — just a selector choice; future tests should assert aria-checked attribute instead."
+}

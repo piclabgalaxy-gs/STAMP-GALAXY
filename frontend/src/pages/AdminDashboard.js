@@ -1,13 +1,17 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  Stamp, LogOut, Copy, Check, X, Star, Package, MessageSquare, Bookmark, Info, Search,
+  Stamp, LogOut, Copy, Check, X, Star, Package, MessageSquare, Bookmark, Info, Search, Bell, Trash2,
 } from "lucide-react";
 import api from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import SEO from "@/components/SEO";
 import Logo from "@/components/Logo";
 import { Input } from "@/components/ui/input";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { buildBookmarklet } from "@/lib/bookmarklet";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -141,10 +145,23 @@ export default function AdminDashboard() {
   const [orders, setOrders] = useState([]);
   const [reviews, setReviews] = useState([]);
   const [query, setQuery] = useState("");
+  const [newCount, setNewCount] = useState(0);
+  const seenRef = useRef(null);
 
   const loadOrders = async () => {
     const { data } = await api.get("/admin/orders");
     setOrders(data);
+    const submittedIds = data.filter((o) => o.status === "submitted").map((o) => o.id);
+    if (seenRef.current === null) {
+      seenRef.current = new Set(submittedIds);
+    } else {
+      const fresh = submittedIds.filter((id) => !seenRef.current.has(id));
+      if (fresh.length) {
+        fresh.forEach((id) => seenRef.current.add(id));
+        setNewCount((c) => c + fresh.length);
+        toast.success(`${fresh.length} new order${fresh.length > 1 ? "s" : ""} received`, { icon: "🔔" });
+      }
+    }
   };
   const loadReviews = async () => {
     const { data } = await api.get("/admin/reviews");
@@ -154,6 +171,8 @@ export default function AdminDashboard() {
   useEffect(() => {
     loadOrders().catch(() => {});
     loadReviews().catch(() => {});
+    const timer = setInterval(() => loadOrders().catch(() => {}), 15000);
+    return () => clearInterval(timer);
   }, []);
 
   const togglePayment = async (order) => {
@@ -164,6 +183,17 @@ export default function AdminDashboard() {
       toast.success(`Marked as ${next}`);
     } catch (e) {
       toast.error("Could not update payment status.");
+    }
+  };
+
+  const deleteOrder = async (order) => {
+    try {
+      await api.delete(`/admin/orders/${order.id}`);
+      setOrders((prev) => prev.filter((o) => o.id !== order.id));
+      if (seenRef.current) seenRef.current.delete(order.id);
+      toast.success("Order deleted");
+    } catch (e) {
+      toast.error("Could not delete order.");
     }
   };
 
@@ -200,14 +230,29 @@ export default function AdminDashboard() {
       <header className="sticky top-0 z-40 border-b border-slate-200 bg-slate-900 text-white">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <Logo to={null} dark />
-          <Button
-            data-testid="admin-logout-btn"
-            variant="ghost"
-            onClick={() => { logout(); navigate("/"); }}
-            className="gap-2 text-white hover:bg-slate-800 hover:text-white"
-          >
-            <LogOut className="h-4 w-4" /> Logout
-          </Button>
+          <div className="flex items-center gap-2">
+            <button
+              data-testid="notification-bell"
+              onClick={() => setNewCount(0)}
+              title={newCount ? `${newCount} new order(s)` : "No new orders"}
+              className="relative flex h-10 w-10 items-center justify-center rounded-md text-white transition-colors hover:bg-slate-800"
+            >
+              <Bell className="h-5 w-5" />
+              {newCount > 0 && (
+                <span data-testid="notification-badge" className="absolute -right-0.5 -top-0.5 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-500 px-1 text-[11px] font-bold text-white">
+                  {newCount}
+                </span>
+              )}
+            </button>
+            <Button
+              data-testid="admin-logout-btn"
+              variant="ghost"
+              onClick={() => { logout(); navigate("/"); }}
+              className="gap-2 text-white hover:bg-slate-800 hover:text-white"
+            >
+              <LogOut className="h-4 w-4" /> Logout
+            </Button>
+          </div>
         </div>
       </header>
 
@@ -254,6 +299,7 @@ export default function AdminDashboard() {
                 <Table data-testid="admin-orders-table">
                   <TableHeader>
                     <TableRow>
+                      <TableHead className="w-12">#</TableHead>
                       <TableHead>Customer</TableHead>
                       <TableHead>Document</TableHead>
                       <TableHead>Status</TableHead>
@@ -264,10 +310,11 @@ export default function AdminDashboard() {
                   </TableHeader>
                   <TableBody>
                     {filteredOrders.length === 0 ? (
-                      <TableRow><TableCell colSpan={6} className="py-10 text-center text-slate-500">{orders.length === 0 ? "No orders yet." : "No orders match your search."}</TableCell></TableRow>
+                      <TableRow><TableCell colSpan={7} className="py-10 text-center text-slate-500">{orders.length === 0 ? "No orders yet." : "No orders match your search."}</TableCell></TableRow>
                     ) : (
-                      filteredOrders.map((o) => (
+                      filteredOrders.map((o, idx) => (
                         <TableRow key={o.id} data-testid={`admin-order-row-${o.id}`}>
+                          <TableCell className="tabular-nums text-sm font-medium text-slate-500" data-testid={`order-serial-${o.id}`}>{idx + 1}</TableCell>
                           <TableCell>
                             <div className="font-medium text-slate-900">{o.customer_name || "—"}</div>
                             <div className="text-xs text-slate-500">{o.customer_mobile}</div>
@@ -296,11 +343,35 @@ export default function AdminDashboard() {
                           </TableCell>
                           <TableCell className="text-xs text-slate-500">{fmtDate(o.updated_at)}</TableCell>
                           <TableCell className="text-right">
-                            <OrderDetailDialog order={o} autofillKey={autofillKey}>
-                              <Button variant="outline" size="sm" data-testid={`view-order-${o.id}`} className="border-slate-300">
-                                View & Bookmarklet
-                              </Button>
-                            </OrderDetailDialog>
+                            <div className="flex items-center justify-end gap-2">
+                              <OrderDetailDialog order={o} autofillKey={autofillKey}>
+                                <Button variant="outline" size="sm" data-testid={`view-order-${o.id}`} className="border-slate-300">
+                                  View & Bookmarklet
+                                </Button>
+                              </OrderDetailDialog>
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button variant="outline" size="sm" data-testid={`delete-order-${o.id}`} className="border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700">
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent data-testid={`delete-confirm-${o.id}`}>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Delete this order?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      This will permanently delete the order for <strong>{o.customer_name || o.customer_mobile || "this customer"}</strong>
+                                      {o.data?.purchased_by ? ` (${o.data.purchased_by})` : ""}. This action cannot be undone.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel data-testid={`delete-cancel-${o.id}`}>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction data-testid={`delete-confirm-btn-${o.id}`} onClick={() => deleteOrder(o)} className="bg-red-600 hover:bg-red-700">
+                                      Delete
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            </div>
                           </TableCell>
                         </TableRow>
                       ))

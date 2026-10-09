@@ -330,6 +330,14 @@ async def admin_update_payment(order_id: str, body: dict, admin: dict = Depends(
     return {"message": "Payment status updated", "payment_status": status}
 
 
+@api_router.delete("/admin/orders/{order_id}")
+async def admin_delete_order(order_id: str, admin: dict = Depends(get_admin_user)):
+    result = await db.orders.delete_one({"id": order_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Order not found")
+    return {"message": "Order deleted", "order_id": order_id}
+
+
 # ----------------- Reviews -----------------
 @api_router.post("/reviews")
 async def create_review(body: ReviewCreate, user: dict = Depends(get_current_user)):
