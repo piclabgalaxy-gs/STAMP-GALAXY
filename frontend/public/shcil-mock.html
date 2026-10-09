@@ -7,7 +7,9 @@
   <style>
     body{font-family:Arial, sans-serif;background:#f4f6f9;padding:24px;color:#222}
     h2{color:#2a4b8d}
-    table{border-collapse:collapse;background:#fff;width:720px;box-shadow:0 1px 4px rgba(0,0,0,.1)}
+    fieldset{width:720px;margin:16px 0;border:1px solid #c4ccda;background:#fff}
+    legend{font-weight:bold;color:#2a4b8d;padding:0 8px}
+    table{border-collapse:collapse;width:100%}
     td{border:1px solid #d9dee8;padding:10px 12px;vertical-align:middle}
     td.lbl{background:#eef2f8;width:260px;font-weight:bold}
     input[type=text],input[type=number],textarea,select{width:340px;padding:6px;border:1px solid #bcc4d4}
@@ -16,74 +18,52 @@
 </head>
 <body>
   <!--
-    This page mimics the structure of the shcilestamp.com e-Stamping
-    "Create Submission" form: a table layout where the field label lives in a
-    sibling <td> (not a <label>), and inputs carry cryptic server-generated
-    name/id attributes. It is used only to verify the DocGalaxy autofill
-    bookmarklet maps labels -> fields correctly.
+    Mimics shcilestamp.com e-Stamping "Create Submission": the First/Second Party
+    designation lives ONLY in a <legend> section heading, while each field's own
+    label is generic ("Name", "Address Line 1", "Mobile No", "Email Id").
+    Inputs carry cryptic server-generated names. Used to verify the DocGalaxy
+    section-aware autofill bookmarklet.
   -->
   <h2>e-Stamp Online Data Entry (Mock Harness)</h2>
   <form id="estampForm" onsubmit="return false;">
     <table>
-      <tr>
-        <td class="lbl">Stamp Duty Purchased by</td>
-        <td><input type="text" id="ctl00_cph_txtPurBy" name="ctl00$cph$txtPurBy" /></td>
-      </tr>
-      <tr>
-        <td class="lbl">Description of Document</td>
-        <td><textarea id="ctl00_cph_txtDesc" name="ctl00$cph$txtDesc"></textarea></td>
-      </tr>
-      <tr>
-        <td class="lbl">Consideration of Property (Rs.)</td>
-        <td><input type="text" id="ctl00_cph_txtConsidr" name="ctl00$cph$txtConsidr" /></td>
-      </tr>
-      <tr>
-        <td class="lbl">First Party</td>
-        <td><input type="text" id="ctl00_cph_txtFp" name="ctl00$cph$txtFp" /></td>
-      </tr>
-      <tr>
-        <td class="lbl">First Party Address Line 1</td>
-        <td><input type="text" id="ctl00_cph_txtFpAdd1" name="ctl00$cph$txtFpAdd1" /></td>
-      </tr>
-      <tr>
-        <td class="lbl">First Party Mobile No</td>
-        <td><input type="text" id="ctl00_cph_txtFpMob" name="ctl00$cph$txtFpMob" /></td>
-      </tr>
-      <tr>
-        <td class="lbl">First Party Email Id</td>
-        <td><input type="text" id="ctl00_cph_txtFpEmail" name="ctl00$cph$txtFpEmail" /></td>
-      </tr>
-      <tr>
-        <td class="lbl">Second Party</td>
-        <td><input type="text" id="ctl00_cph_txtSp" name="ctl00$cph$txtSp" /></td>
-      </tr>
-      <tr>
-        <td class="lbl">Second Party Address Line 1</td>
-        <td><input type="text" id="ctl00_cph_txtSpAdd1" name="ctl00$cph$txtSpAdd1" /></td>
-      </tr>
-      <tr>
-        <td class="lbl">Second Party Mobile No</td>
-        <td><input type="text" id="ctl00_cph_txtSpMob" name="ctl00$cph$txtSpMob" /></td>
-      </tr>
-      <tr>
-        <td class="lbl">Second Party Email Id</td>
-        <td><input type="text" id="ctl00_cph_txtSpEmail" name="ctl00$cph$txtSpEmail" /></td>
-      </tr>
-      <tr>
-        <td class="lbl">Stamp Duty Amount</td>
-        <td><input type="text" id="ctl00_cph_txtDuty" name="ctl00$cph$txtDuty" /></td>
-      </tr>
-      <tr>
-        <td class="lbl">Stamp Duty Paid by</td>
-        <td>
-          <select id="ctl00_cph_ddlPaidBy" name="ctl00$cph$ddlPaidBy">
-            <option value="">--Select--</option>
-            <option value="1">First Party</option>
-            <option value="2">Second Party</option>
-            <option value="3">Both Parties</option>
-          </select>
-        </td>
-      </tr>
+      <tr><td class="lbl">Stamp Duty Purchased by</td><td><input type="text" id="ctl00_cph_txtPurBy" name="ctl00$cph$txtPurBy" /></td></tr>
+      <tr><td class="lbl">Description of Document</td><td><textarea id="ctl00_cph_txtDesc" name="ctl00$cph$txtDesc"></textarea></td></tr>
+      <tr><td class="lbl">Consideration of Property (Rs.)</td><td><input type="text" id="ctl00_cph_txtConsidr" name="ctl00$cph$txtConsidr" /></td></tr>
+    </table>
+
+    <fieldset>
+      <legend>First Party Details</legend>
+      <table>
+        <tr><td class="lbl">Name</td><td><input type="text" id="ctl00_cph_txtFp" name="ctl00$cph$txtFp" /></td></tr>
+        <tr><td class="lbl">Address Line 1</td><td><input type="text" id="ctl00_cph_txtFpAdd1" name="ctl00$cph$txtFpAdd1" /></td></tr>
+        <tr><td class="lbl">Address Line 2</td><td><input type="text" id="ctl00_cph_txtFpAdd2" name="ctl00$cph$txtFpAdd2" /></td></tr>
+        <tr><td class="lbl">Mobile No</td><td><input type="text" id="ctl00_cph_txtFpMob" name="ctl00$cph$txtFpMob" /></td></tr>
+        <tr><td class="lbl">Email Id</td><td><input type="text" id="ctl00_cph_txtFpEmail" name="ctl00$cph$txtFpEmail" /></td></tr>
+      </table>
+    </fieldset>
+
+    <fieldset>
+      <legend>Second Party Details</legend>
+      <table>
+        <tr><td class="lbl">Name</td><td><input type="text" id="ctl00_cph_txtSp" name="ctl00$cph$txtSp" /></td></tr>
+        <tr><td class="lbl">Address Line 1</td><td><input type="text" id="ctl00_cph_txtSpAdd1" name="ctl00$cph$txtSpAdd1" /></td></tr>
+        <tr><td class="lbl">Address Line 2</td><td><input type="text" id="ctl00_cph_txtSpAdd2" name="ctl00$cph$txtSpAdd2" /></td></tr>
+        <tr><td class="lbl">Mobile No</td><td><input type="text" id="ctl00_cph_txtSpMob" name="ctl00$cph$txtSpMob" /></td></tr>
+        <tr><td class="lbl">Email Id</td><td><input type="text" id="ctl00_cph_txtSpEmail" name="ctl00$cph$txtSpEmail" /></td></tr>
+      </table>
+    </fieldset>
+
+    <table>
+      <tr><td class="lbl">Stamp Duty Amount</td><td><input type="text" id="ctl00_cph_txtDuty" name="ctl00$cph$txtDuty" /></td></tr>
+      <tr><td class="lbl">Stamp Duty Paid by</td><td>
+        <select id="ctl00_cph_ddlPaidBy" name="ctl00$cph$ddlPaidBy">
+          <option value="">--Select--</option>
+          <option value="1">First Party</option>
+          <option value="2">Second Party</option>
+          <option value="3">Both Parties</option>
+        </select>
+      </td></tr>
     </table>
   </form>
 </body>

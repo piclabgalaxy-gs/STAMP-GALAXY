@@ -76,10 +76,12 @@ function ctxOf(el){
  return norm(p.join(' '));
 }
 function nameOf(el){return (el.name+' '+el.id).toLowerCase().replace(/[^a-z0-9]/g,'');}
-function scoreField(F,ctx,ctxNS,nm){
- if(F.neg){for(var j=0;j<F.neg.length;j++){var nt=norm(F.neg[j]);if(nt&&ctx.indexOf(nt)>-1)return 0;}}
+function sectionParty(el){var heads=document.querySelectorAll('legend,caption,th,h1,h2,h3,h4,h5,h6,strong,b,[class*=head],[class*=section],[class*=title],[class*=group]');var party='';for(var i=0;i<heads.length;i++){var h=heads[i];try{var pos=el.compareDocumentPosition(h);if((pos&2)&&!(pos&8)){var t=norm(h.innerText||h.textContent||'');if(t&&t.length<60){if(t.indexOf('second party')>-1||t.indexOf('party 2')>-1||t.indexOf('party two')>-1)party='second party';else if(t.indexOf('first party')>-1||t.indexOf('party 1')>-1||t.indexOf('party one')>-1)party='first party';}}}catch(e){}}return party;}
+function scoreField(F,cl,clNS,cf,cfNS,nm){
+ if(F.neg){for(var j=0;j<F.neg.length;j++){var nt=norm(F.neg[j]);if(nt&&cf.indexOf(nt)>-1)return 0;}}
  var score=0;
  (F.rules||[]).forEach(function(rule){
+  var useFull=rule.length>=2;var ctx=useFull?cf:cl;var ctxNS=useFull?cfNS:clNS;
   var ok=true,s=0;
   rule.forEach(function(tok){var t=norm(tok);var tNS=t.replace(/ /g,'');if(t&&(ctx.indexOf(t)>-1||(tNS&&ctxNS.indexOf(tNS)>-1)))s+=tNS.length;else ok=false;});
   if(ok&&s>score)score=s;
@@ -89,13 +91,13 @@ function scoreField(F,ctx,ctxNS,nm){
 }
 function fill(d){
  var els=document.querySelectorAll('input:not([type=hidden]):not([type=submit]):not([type=button]):not([type=reset]):not([type=checkbox]):not([type=radio]):not([type=password]),textarea,select');
- var diag=[];for(var i=0;i<els.length;i++){var e=els[i];diag.push({tag:e.tagName,type:e.type||'',name:e.name||'',id:e.id||'',label:ctxOf(e).slice(0,70)});}
+ var diag=[];for(var i=0;i<els.length;i++){var e=els[i];diag.push({tag:e.tagName,type:e.type||'',name:e.name||'',id:e.id||'',section:sectionParty(e),label:ctxOf(e).slice(0,70)});}
  try{console.log('%cDocGalaxy Autofill — '+els.length+' fillable field(s) detected on this page:','font-weight:bold;color:#2a4b8d;font-size:13px');if(console.table){console.table(diag);}else{console.log(JSON.stringify(diag,null,2));}}catch(e){}
  var filled=0,matched=[];
  els.forEach(function(el){
-  var ctx=ctxOf(el);var ctxNS=ctx.replace(/ /g,'');var nm=nameOf(el);
+  var cl=ctxOf(el);var sp=sectionParty(el);var cf=sp?(cl+' '+sp):cl;var clNS=cl.replace(/ /g,'');var cfNS=cf.replace(/ /g,'');var nm=nameOf(el);
   var bestF=null,bestScore=0;
-  FIELDS.forEach(function(F){var v=d[F.f];if(v==null||String(v).trim()==='')return;var sc=scoreField(F,ctx,ctxNS,nm);if(sc>bestScore){bestScore=sc;bestF=F;}});
+  FIELDS.forEach(function(F){var v=d[F.f];if(v==null||String(v).trim()==='')return;var sc=scoreField(F,cl,clNS,cf,cfNS,nm);if(sc>bestScore){bestScore=sc;bestF=F;}});
   if(bestF){if(setVal(el,String(d[bestF.f]))){filled++;matched.push((el.name||el.id||el.tagName)+' <= '+bestF.f+' = '+d[bestF.f]);try{el.style.outline='2px solid #22c55e';}catch(e){}}}
  });
  try{console.log('%cDocGalaxy Autofill: '+filled+' field(s) filled (strict mapping).','font-weight:bold;color:'+(filled?'#16a34a':'#dc2626'),matched);if(!filled){console.log('No strict matches. Copy the field-name table above and send it so the exact mapping can be set.');}}catch(e){}
