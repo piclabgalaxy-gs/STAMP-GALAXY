@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const BACKEND_URL = "https://galaxystamp.onrender.com";
+const BACKEND_URL = "https://galaxy-stamp.onrender.com";
 export const API = `${BACKEND_URL}/api`;
 
 const api = axios.create({ baseURL: API });
