@@ -1,0 +1,20 @@
+name: Build Frontend
+on:
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+      - name: Install and build
+        working-directory: frontend
+        run: |
+          yarn install
+          CI=false yarn build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: build
+          path: frontend/build
