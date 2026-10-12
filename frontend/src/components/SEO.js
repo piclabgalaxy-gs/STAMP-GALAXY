@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 
-const SITE = "https://galaxystamp.docgalaxy.in";
+const SITE = "https://galaxystamp.com";
 
 function setMeta(attr, key, content) {
   let el = document.head.querySelector(`meta[${attr}="${key}"]`);
