@@ -4,4 +4,4 @@ Allow: /
 Disallow: /admin
 Disallow: /dashboard
 
-Sitemap: https://galaxystamp.docgalaxy.in/sitemap.xml
+Sitemap: https://galaxystamp.com/sitemap.xml
