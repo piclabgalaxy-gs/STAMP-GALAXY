@@ -448,7 +448,7 @@ export default function Home() {
             >
               <Card
                 className="flex h-full flex-col border border-slate-200 bg-white p-6"
-                data-testid={`testimonial-${i}`}
+                data-testid={"testimonial-" + i}
               >
                 <Quote
                   className="h-7 w-7 text-amber-400"
