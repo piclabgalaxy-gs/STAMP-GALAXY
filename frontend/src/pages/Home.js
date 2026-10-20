@@ -548,9 +548,9 @@ export default function Home() {
             {faqs.map((f, i) => (
               <AccordionItem
                 key={i}
-                value={`item-${i}`}
+               value={`item-${i}`}
                 className="border-slate-200"
-                data-testid={`faq-item-${i}`}
+                data-testid={"faq-item-" + i}
               >
                 <AccordionTrigger className="text-left font-head text-base font-semibold text-slate-900 hover:no-underline">
                   {f.question}
